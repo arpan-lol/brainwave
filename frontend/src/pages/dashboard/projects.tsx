@@ -15,8 +15,8 @@ export const ProjectsPage = () => {
     createProject(
       { name: "Untitled Design", width, height },
       {
-        onSuccess: (project) => {
-          navigate(`/editor/${project.id}`);
+        onSuccess: (response) => {
+          navigate(`/editor/${response.data.id}`);
         },
       }
     );

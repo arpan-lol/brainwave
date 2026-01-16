@@ -19,22 +19,23 @@ export const useSaveAsTemplate = () => {
   const queryClient = useQueryClient();
 
   const mutation = useMutation<ResponseType, Error, RequestType>({
-    mutationFn: async (data) => {
+    mutationFn: async ({ name, json, width, height, thumbnailUrl }) => {
+      const projects = getProjectsFromStorage();
+
       const newTemplate: Project = {
         id: crypto.randomUUID(),
-        name: data.name,
-        json: data.json,
-        width: data.width,
-        height: data.height,
+        name,
+        json,
+        width,
+        height,
         userId: "anonymous",
         isTemplate: true,
         isPro: false,
-        thumbnailUrl: data.thumbnailUrl || null,
+        thumbnailUrl: thumbnailUrl || null,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
-      const projects = getProjectsFromStorage();
       projects.push(newTemplate);
       saveProjectsToStorage(projects);
 
