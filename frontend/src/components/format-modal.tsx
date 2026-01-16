@@ -96,7 +96,7 @@ export const FormatModal = ({ isOpen, onClose, onSelect }: FormatModalProps) => 
                     {format.name}
                   </p>
                   <p className="text-[11px] text-neutral-500 font-mono mt-0.5">
-                    {format.width}×{format.height}
+                    {format.width}x{format.height}
                   </p>
                 </button>
               );

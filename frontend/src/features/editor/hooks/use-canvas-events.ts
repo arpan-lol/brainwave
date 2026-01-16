@@ -29,8 +29,8 @@ export const useCanvasEvents = ({
       };
 
       canvas.on("object:added", debouncedSave);
-      canvas.on("object:removed", () => save());
-      canvas.on("object:modified", () => save());
+      canvas.on("object:removed", debouncedSave);
+      canvas.on("object:modified", debouncedSave);
       canvas.on("selection:created", (e) => {
         setSelectedObjects(e.selected || []);
       });

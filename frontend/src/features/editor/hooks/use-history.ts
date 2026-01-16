@@ -44,40 +44,31 @@ export const useHistory = ({ canvas, saveCallback }: UseHistoryProps) => {
       const height = workspace?.height || 0;
       const width = workspace?.width || 0;
 
-      // Generate thumbnail
+      // Generate thumbnail WITHOUT modifying canvas viewport
       let thumbnailUrl: string | undefined = undefined;
       try {
         if (workspace && width > 0 && height > 0) {
-          // Save current viewport transform
-          const originalTransform = canvas.viewportTransform ? [...canvas.viewportTransform] : null;
-
-          // Reset viewport for clean export
-          canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+          // Create an off-screen canvas for thumbnail
+          const tempCanvas = document.createElement('canvas');
+          const scale = 0.4;
+          tempCanvas.width = width * scale;
+          tempCanvas.height = height * scale;
+          const tempCtx = tempCanvas.getContext('2d');
           
-          // Update all object coords after viewport change
-          canvas.getObjects().forEach(obj => obj.setCoords());
-          canvas.renderAll();
-
-          // Generate thumbnail as data URL
-          const options = {
-            format: "png" as const,
-            quality: 0.9,
-            multiplier: 0.4,
-            left: workspace.left || 0,
-            top: workspace.top || 0,
-            width: width,
-            height: height,
-            enableRetinaScaling: false,
-          };
-
-          thumbnailUrl = canvas.toDataURL(options);
-
-          // Restore viewport transform
-          if (originalTransform) {
-            canvas.setViewportTransform(originalTransform);
-            // Update all object coords after restoring viewport
-            canvas.getObjects().forEach(obj => obj.setCoords());
-            canvas.renderAll();
+          if (tempCtx) {
+            // Get the main canvas element
+            const mainCanvasElement = canvas.getElement();
+            const left = workspace.left || 0;
+            const top = workspace.top || 0;
+            
+            // Draw the workspace area to temp canvas
+            tempCtx.drawImage(
+              mainCanvasElement,
+              left, top, width, height,
+              0, 0, tempCanvas.width, tempCanvas.height
+            );
+            
+            thumbnailUrl = tempCanvas.toDataURL('image/png', 0.9);
           }
         }
       } catch (error) {
