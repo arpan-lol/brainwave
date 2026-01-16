@@ -88,9 +88,14 @@ export const EditorPage = () => {
     [activeTool, editor]
   );
 
+  const canvasInitialized = useRef(false);
+
   useEffect(() => {
     if (!canvasRef.current || !containerRef.current) return;
     if (!project) return;
+    if (canvasInitialized.current) return;
+
+    canvasInitialized.current = true;
 
     const canvas = new fabric.Canvas(canvasRef.current, {
       controlsAboveOverlay: true,
@@ -104,9 +109,10 @@ export const EditorPage = () => {
 
     return () => {
       canvas.dispose();
+      canvasInitialized.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project]);
+  }, [init, project?.id]);
 
   if (isLoading) {
     return (

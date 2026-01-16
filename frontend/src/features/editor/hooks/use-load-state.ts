@@ -18,10 +18,13 @@ export const useLoadState = ({
   canvasHistory,
   setHistoryIndex,
 }: UseLoadStateProps) => {
-  const initialized = useRef(false);
+  const initializedCanvas = useRef<fabric.Canvas | null>(null);
 
   useEffect(() => {
-    if (!initialized.current && initialState?.current && canvas) {
+    if (!canvas || initializedCanvas.current === canvas) return;
+
+    if (initialState?.current) {
+      initializedCanvas.current = canvas;
       const data = JSON.parse(initialState.current);
 
       canvas.loadFromJSON(data, () => {
@@ -31,7 +34,9 @@ export const useLoadState = ({
         setHistoryIndex(0);
         autoZoom();
       });
-      initialized.current = true;
+    } else {
+      initializedCanvas.current = canvas;
+      autoZoom();
     }
   }, [canvas, autoZoom, initialState, canvasHistory, setHistoryIndex]);
 };

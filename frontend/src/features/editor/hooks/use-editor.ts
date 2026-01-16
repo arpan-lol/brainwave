@@ -1,5 +1,5 @@
 import { fabric } from "fabric";
-import { useCallback, useState, useMemo, useRef } from "react";
+import { useCallback, useState, useMemo, useRef, useEffect } from "react";
 
 import type {
   Editor,
@@ -708,6 +708,18 @@ export const useEditor = ({
   const initialState = useRef(defaultState);
   const initialWidth = useRef(defaultWidth);
   const initialHeight = useRef(defaultHeight);
+
+  useEffect(() => {
+    initialState.current = defaultState;
+  }, [defaultState]);
+
+  useEffect(() => {
+    initialWidth.current = defaultWidth;
+  }, [defaultWidth]);
+
+  useEffect(() => {
+    initialHeight.current = defaultHeight;
+  }, [defaultHeight]);
 
   const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
