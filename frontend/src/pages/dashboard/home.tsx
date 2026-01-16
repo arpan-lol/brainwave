@@ -24,12 +24,12 @@ export const HomePage = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 fade-in">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Welcome to <span className="text-primary">Varnish</span>
+            Welcome to <span className="bg-clip-text text-transparent bg-gradient-to-r from-[hsl(var(--varnish-blue))] to-[hsl(var(--varnish-red))]">Varnish</span>
           </h1>
           <p className="text-muted-foreground mt-1">
             Create stunning designs with AI-powered tools
