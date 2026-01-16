@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+﻿import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   validateCanvas,
@@ -8,10 +8,51 @@ import {
   type AutoFixRequest,
   type AutoFixResponse,
 } from "@/lib/api-client";
+import { designAPI, Platform } from "@/services/designAPI";
+import { fabric } from "fabric";
 
-/**
- * Hook for validating canvas compliance
- */
+interface ComplianceCheckOptions {
+  canvas: fabric.Canvas | null;
+  platform: Platform;
+}
+
+export const useUnifiedComplianceCheck = () => {
+  return useMutation({
+    mutationFn: async ({ canvas, platform }: ComplianceCheckOptions) => {
+      if (!canvas) throw new Error("No canvas available");
+      
+      const canvasState = designAPI.fabricCanvasToState(canvas);
+      const response = await designAPI.validateCanvas(canvasState, platform);
+      
+      if (!response.success) {
+        throw new Error("Validation failed");
+      }
+      
+      return response;
+    },
+    onSuccess: (data) => {
+      const validation = data.data.validation;
+      if (validation) {
+        if (validation.isCompliant) {
+          toast.success("Design passes all compliance checks!");
+        } else {
+          const violations = validation.violations.length;
+          const warnings = validation.warnings.length;
+          if (violations > 0) {
+            toast.error(`Found ${violations} critical violations`);
+          } else if (warnings > 0) {
+            toast.warning(`Found ${warnings} warnings`);
+          }
+        }
+      }
+    },
+    onError: (error) => {
+      console.error("Compliance check error:", error);
+      toast.error(error instanceof Error ? error.message : "Compliance check failed");
+    },
+  });
+};
+
 export const useValidateCanvas = () => {
   return useMutation<ValidationResponse | undefined, Error, ValidationRequest>({
     mutationFn: async (request) => {
@@ -23,7 +64,7 @@ export const useValidateCanvas = () => {
     },
     onSuccess: (data) => {
       if (data?.compliant) {
-        toast.success(`Canvas is compliant! ✓`);
+        toast.success("Canvas is compliant! ✓");
       } else {
         const issueCount = data?.issues?.length || 0;
         toast.warning(`Found ${issueCount} issue${issueCount !== 1 ? 's' : ''}`);
@@ -36,9 +77,6 @@ export const useValidateCanvas = () => {
   });
 };
 
-/**
- * Hook for auto-fixing compliance issues
- */
 export const useAutoFix = () => {
   return useMutation<AutoFixResponse | undefined, Error, AutoFixRequest>({
     mutationFn: async (request) => {

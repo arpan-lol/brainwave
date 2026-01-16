@@ -9,14 +9,14 @@ import {
   Wand2,
   ChevronDown,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Editor } from "@/features/editor/types";
+import { toast } from "sonner";
 import {
   validateCanvas,
   generateContentForFix,
   type CanvasObject,
 } from "@/lib/api-client";
-import { cn } from "@/lib/utils";
-import { Editor } from "@/features/editor/types";
-import { toast } from "sonner";
 
 // Sticker paths
 const VARNISH_TAG_STICKERS = {
@@ -329,8 +329,8 @@ export function CompliancePanel({ editor, canvasWidth, canvasHeight }: Props) {
             };
           }
 
-          const fail = res.data!.issues?.find((i) => i.rule === rule.id);
-          const warn = res.data!.warnings?.find((w) => w.rule === rule.id);
+          const fail = res.data!.issues?.find((i: any) => i.rule === rule.id);
+          const warn = res.data!.warnings?.find((w: any) => w.rule === rule.id);
           if (fail)
             return { rule, status: "fail" as const, message: fail.message };
           if (warn)
