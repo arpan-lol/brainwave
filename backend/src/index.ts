@@ -8,21 +8,17 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(cors({
+  origin: process.env.FRONTEND_ORIGIN || "http://localhost://5173",
+}));
+app.use(express.json({ limit: '100mb' }));
 
-app.get('/', (req: Request, res: Response) => {
-  res.send('Retail Media API is running...');
+app.get('/health', (req: Request, res: Response) => {
+  res.send('All good!');
 });
 
 app.use('/api', apiRoutes);
 
 app.listen(PORT, () => {
-  console.log(`🚀 LangGraph Backend Server running on port ${PORT}`);
-  console.log(`📝 Available endpoints:`);
-  console.log(`   POST /api/route - Route user requests`);
-  console.log(`   POST /api/creative - Run creative agent`);
-  console.log(`   POST /api/validate - Validate designs`);
-  console.log(`   POST /api/validate/auto-fix - Auto-fix violations`);
-  console.log(`   POST /api/workflow - Complete workflow`);
+  console.log(`Backend Server running on port ${PORT}`);
 });

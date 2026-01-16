@@ -28,6 +28,7 @@ import { VarnishTag } from "@/features/editor/components/varnish-tag";
 import { StickerLibrary } from "@/features/editor/components/sticker-library";
 import { CompliancePanel } from "@/features/editor/components/compliance-panel";
 import { ImageGeneration } from "@/features/editor/components/image-generation";
+import { DesignChat } from "@/components/design-chat";
 
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -44,7 +45,7 @@ const VARNISH_BLUE = "#00539F";
 const VARNISH_RED = "#E53935";
 const VARNISH_YELLOW = "#FFCC00";
 
-type AIPanel = "tools" | "headlines" | "remove-bg" | "generate" | "logo" | "badge" | "stickers" | "compliance";
+type AIPanel = "tools" | "chat" | "headlines" | "remove-bg" | "generate" | "logo" | "badge" | "stickers" | "compliance";
 
 interface PanelItem {
   id: AIPanel;
@@ -54,6 +55,7 @@ interface PanelItem {
 }
 
 const PANELS: PanelItem[] = [
+  { id: "chat", label: "AI Assistant", icon: <Sparkles className="w-4 h-4" />, description: "Natural language requests" },
   { id: "headlines", label: "Headlines", icon: <Type className="w-4 h-4" />, description: "AI-generated headlines" },
   { id: "remove-bg", label: "Remove BG", icon: <Eraser className="w-4 h-4" />, description: "Background removal" },
   { id: "generate", label: "Generate BG", icon: <Wand2 className="w-4 h-4" />, description: "AI background generation" },
@@ -68,7 +70,8 @@ export const AiSidebar = ({
   activeTool,
   onChangeActiveTool,
 }: AiSidebarProps) => {
-  const [activePanel, setActivePanel] = useState<AIPanel>("tools");
+  const [activePanel, setActivePanel] = useState<AIPanel>("chat");
+  const [selectedPlatform, setSelectedPlatform] = useState<"amazon" | "walmart" | "flipkart">("amazon");
 
   const onClose = () => {
     onChangeActiveTool("select");
@@ -80,6 +83,14 @@ export const AiSidebar = ({
 
   const renderPanel = () => {
     switch (activePanel) {
+      case "chat":
+        return (
+          <DesignChat
+            canvas={editor?.canvas || null}
+            platform={selectedPlatform}
+            onPlatformChange={setSelectedPlatform}
+          />
+        );
       case "headlines":
         return (
           <HeadlineGenerator 
@@ -203,18 +214,18 @@ export const AiSidebar = ({
       )}
     >
       <ToolSidebarHeader
-        title={activePanel === "tools" ? "AI Studio" : PANELS.find(p => p.id === activePanel)?.label || "AI Studio"}
-        description={activePanel === "tools" ? "Varnish creative assistant" : "Back to tools"}
+        title={activePanel === "tools" ? "AI Studio" : activePanel === "chat" ? "AI Assistant" : PANELS.find(p => p.id === activePanel)?.label || "AI Studio"}
+        description={activePanel === "tools" ? "Varnish creative assistant" : activePanel === "chat" ? "Natural language design requests" : "Back to tools"}
       />
       
       {/* Back Button */}
-      {activePanel !== "tools" && (
+      {activePanel !== "tools" && activePanel !== "chat" && (
         <button
-          onClick={() => setActivePanel("tools")}
+          onClick={() => setActivePanel("chat")}
           className="mx-4 mb-2 px-3 py-2 text-xs text-neutral-400 hover:text-white flex items-center gap-2 rounded-lg hover:bg-white/5 transition-all"
         >
           <ChevronRight className="w-3 h-3 rotate-180" />
-          Back to AI Tools
+          Back to AI Assistant
         </button>
       )}
       
