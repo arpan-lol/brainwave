@@ -60,7 +60,13 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
   const handleSaveAsTemplate = async () => {
     const confirmed = await confirmTemplate();
     if (confirmed) {
-      saveAsTemplate({ id: project.id });
+      saveAsTemplate({
+        name: `${project.name} (Template)`,
+        json: project.json,
+        width: project.width,
+        height: project.height,
+        thumbnailUrl: project.thumbnailUrl || undefined,
+      });
     }
   };
 

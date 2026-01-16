@@ -1,5 +1,5 @@
 import { fabric } from "fabric";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface UseCanvasEventsProps {
   save: () => void;
@@ -14,9 +14,21 @@ export const useCanvasEvents = ({
   setSelectedObjects,
   clearSelectionCallback,
 }: UseCanvasEventsProps) => {
+  const saveTimeoutRef = useRef<number | null>(null);
+
   useEffect(() => {
     if (canvas) {
-      canvas.on("object:added", () => save());
+      const debouncedSave = () => {
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = window.setTimeout(() => {
+          canvas.renderAll();
+          save();
+        }, 100);
+      };
+
+      canvas.on("object:added", debouncedSave);
       canvas.on("object:removed", () => save());
       canvas.on("object:modified", () => save());
       canvas.on("selection:created", (e) => {
@@ -32,6 +44,9 @@ export const useCanvasEvents = ({
     }
 
     return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
       if (canvas) {
         canvas.off("object:added");
         canvas.off("object:removed");

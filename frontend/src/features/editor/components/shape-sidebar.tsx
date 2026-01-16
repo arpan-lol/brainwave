@@ -82,7 +82,7 @@ export const ShapeSidebar = ({ editor, activeTool, onChangeActiveTool }: ShapeSi
   return (
     <aside
       className={cn(
-        "editor-tool-panel relative z-[40] w-[360px] h-full flex flex-col",
+        "editor-tool-panel relative z-40 w-90 h-full flex flex-col",
         activeTool === "shapes" ? "visible" : "hidden"
       )}
     >

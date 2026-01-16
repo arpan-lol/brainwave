@@ -49,10 +49,13 @@ export const useHistory = ({ canvas, saveCallback }: UseHistoryProps) => {
       try {
         if (workspace && width > 0 && height > 0) {
           // Save current viewport transform
-          const originalTransform = canvas.viewportTransform;
+          const originalTransform = canvas.viewportTransform ? [...canvas.viewportTransform] : null;
 
           // Reset viewport for clean export
           canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+          
+          // Update all object coords after viewport change
+          canvas.getObjects().forEach(obj => obj.setCoords());
           canvas.renderAll();
 
           // Generate thumbnail as data URL
@@ -72,6 +75,8 @@ export const useHistory = ({ canvas, saveCallback }: UseHistoryProps) => {
           // Restore viewport transform
           if (originalTransform) {
             canvas.setViewportTransform(originalTransform);
+            // Update all object coords after restoring viewport
+            canvas.getObjects().forEach(obj => obj.setCoords());
             canvas.renderAll();
           }
         }

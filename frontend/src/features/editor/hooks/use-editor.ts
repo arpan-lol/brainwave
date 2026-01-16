@@ -238,6 +238,7 @@ const buildEditor = ({
     center(object);
     canvas.add(object);
     canvas.setActiveObject(object);
+    canvas.requestRenderAll();
   };
 
   return {

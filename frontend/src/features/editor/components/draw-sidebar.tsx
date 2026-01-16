@@ -35,7 +35,7 @@ export const DrawSidebar = ({ editor, activeTool, onChangeActiveTool }: DrawSide
   return (
     <aside
       className={cn(
-        "editor-tool-panel relative z-[40] w-[360px] h-full flex flex-col",
+        "editor-tool-panel relative z-40 w-90 h-full flex flex-col",
         activeTool === "draw" ? "visible" : "hidden"
       )}
     >
@@ -66,7 +66,7 @@ export const DrawSidebar = ({ editor, activeTool, onChangeActiveTool }: DrawSide
               min={1}
               max={50}
               step={1}
-              className="[&_[role=slider]]:bg-white [&_[role=slider]]:border-0"
+              className="**:[[role=slider]]:bg-white **:[[role=slider]]:border-0"
             />
             {/* Preview */}
             <div className="flex items-center justify-center py-6">
