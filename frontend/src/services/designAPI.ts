@@ -117,7 +117,7 @@ export class DesignAPI {
 
   async executeDesignRequest(request: DesignRequest): Promise<DesignResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/workflow`, {
+      const response = await fetch(`${this.baseUrl}/api/workflow`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -228,8 +228,18 @@ export class DesignAPI {
 
   applyElementsToCanvas(canvas: fabric.Canvas, elements: CanvasElement[]): void {
     elements.forEach((element) => {
-      if (element.type === 'text' && element.text) {
-        const text = new fabric.Textbox(element.text, {
+      if (element.type === 'background') {
+        try {
+          const style = typeof element.style === 'string' ? JSON.parse(element.style) : element.style;
+          if (style?.backgroundColor) {
+            canvas.setBackgroundColor(style.backgroundColor, () => canvas.renderAll());
+          }
+        } catch (e) {
+          console.error('Failed to parse background style:', e);
+        }
+      } else if (element.type === 'text') {
+        const textContent = element.content || element.text || '';
+        const text = new fabric.Textbox(textContent, {
           left: element.left || element.x || 0,
           top: element.top || element.y || 0,
           fontSize: element.fontSize || 20,
@@ -239,6 +249,38 @@ export class DesignAPI {
         });
         (text as any).customId = element.id || element.customId;
         canvas.add(text);
+      } else if (element.type === 'shape') {
+        try {
+          const style = typeof element.style === 'string' ? JSON.parse(element.style) : element.style || {};
+          const shapeOptions = {
+            left: element.left || element.x || 0,
+            top: element.top || element.y || 0,
+            width: element.width || 100,
+            height: element.height || 100,
+            fill: style.backgroundColor || element.fill || '#000000',
+            stroke: style.borderColor || element.stroke,
+            strokeWidth: style.borderWidth || element.strokeWidth || 0,
+          };
+          
+          let shape: fabric.Object;
+          if (style.borderRadius === '50%') {
+            shape = new fabric.Circle({
+              ...shapeOptions,
+              radius: (shapeOptions.width || 100) / 2,
+            });
+          } else {
+            shape = new fabric.Rect({
+              ...shapeOptions,
+              rx: style.borderRadius ? parseInt(style.borderRadius) : 0,
+              ry: style.borderRadius ? parseInt(style.borderRadius) : 0,
+            });
+          }
+          
+          (shape as any).customId = element.id || element.customId;
+          canvas.add(shape);
+        } catch (e) {
+          console.error('Failed to create shape:', e);
+        }
       } else if (element.type === 'image' && element.src) {
         fabric.Image.fromURL(element.src, (img) => {
           img.set({

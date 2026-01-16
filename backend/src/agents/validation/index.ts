@@ -12,6 +12,8 @@ import {
 import { getPlatformRules } from "../creative/platform-rules.js";
 import { VALIDATION_LLM_PROMPT } from "../../prompts/validation.prompts.js";
 
+import { createLazyModel } from "../model-factory.js";
+
 const ValidationLLMSchema = z.object({
   violations: z.array(z.object({
     rule: z.string(),
@@ -24,13 +26,10 @@ const ValidationLLMSchema = z.object({
   suggestions: z.array(z.string()),
 });
 
-const model = new ChatGoogleGenerativeAI({
-  model: "gemini-2.5",
-  temperature: 0,
-  apiKey: process.env.GOOGLE_API_KEY,
-});
-
-const modelWithStructuredOutput = model.withStructuredOutput(ValidationLLMSchema);
+const getModel = createLazyModel(
+  { model: "gemini-2.5-flash", temperature: 0 },
+  ValidationLLMSchema
+);
 
 // non llm
 
@@ -115,7 +114,7 @@ async function llmValidate(
   );
 
   try {
-    const response = await modelWithStructuredOutput.invoke([
+    const response = await getModel().invoke([
       new SystemMessage(prompt),
       new HumanMessage("Please validate this design."),
     ]) as z.infer<typeof ValidationLLMSchema>;

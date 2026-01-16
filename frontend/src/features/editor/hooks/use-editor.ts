@@ -35,9 +35,17 @@ import { useCanvasEvents } from "@/features/editor/hooks/use-canvas-events";
 import { useWindowEvents } from "@/features/editor/hooks/use-window-events";
 import { useLoadState } from "@/features/editor/hooks/use-load-state";
 
-// Fix Fabric.js textBaseline issue - use 'middle' instead of 'alphabetic' to avoid browser warning
+// Fix Fabric.js textBaseline issue - patch the _setTextStyles method
 if (typeof fabric !== "undefined" && fabric.Text) {
-  (fabric.Text.prototype as any).textBaseline = "middle";
+  const originalSetTextStyles = (fabric.Text.prototype as any)._setTextStyles;
+  (fabric.Text.prototype as any)._setTextStyles = function(ctx: CanvasRenderingContext2D, ...args: any[]) {
+    if (originalSetTextStyles) {
+      originalSetTextStyles.call(this, ctx, ...args);
+    }
+    if ((ctx as any).textBaseline === 'alphabetical') {
+      ctx.textBaseline = 'alphabetic';
+    }
+  };
 }
 
 const buildEditor = ({

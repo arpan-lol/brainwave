@@ -4,14 +4,12 @@ import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 import { RouterState, RouterOutput, RouterOutputSchema } from "../types.js";
 import { z } from "zod";
 import { ROUTER_PROMPT } from "../../prompts/router.prompts.js";
+import { createLazyModel } from "../model-factory.js";
 
-const model = new ChatGoogleGenerativeAI({
-  model: "gemini-2.5-flash",
-  temperature: 0,
-  apiKey: process.env.GOOGLE_API_KEY,
-});
-
-const modelWithStructuredOutput = model.withStructuredOutput(RouterOutputSchema);
+const getModel = createLazyModel(
+  { model: "gemini-2.5-flash", temperature: 0 },
+  RouterOutputSchema
+);
 
 const RouterStateSchema = new StateSchema({
   canvasState: z.object({
@@ -32,7 +30,7 @@ async function routerNode(state: RouterState): Promise<Partial<RouterState>> {
   const prompt = ROUTER_PROMPT(dimensions, elementCount, state.userRequest);
 
   try {
-    const routerOutput = await modelWithStructuredOutput.invoke([
+    const routerOutput = await getModel().invoke([
       new SystemMessage(prompt),
       new HumanMessage(state.userRequest),
     ]) as RouterOutput;

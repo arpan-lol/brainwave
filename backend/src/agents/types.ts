@@ -9,7 +9,11 @@ export type RouterCategory = z.infer<typeof RouterCategorySchema>;
 export const RouterOutputSchema = z.object({
   category: RouterCategorySchema,
   platform: z.string(),
-  params: z.record(z.string(), z.any()),
+  params: z.object({
+    targetElement: z.string().optional(),
+    imagePrompt: z.string().optional(),
+    textContent: z.string().optional(),
+  }).passthrough(),
   confidence: z.number().min(0).max(1),
 });
 export type RouterOutput = z.infer<typeof RouterOutputSchema>;

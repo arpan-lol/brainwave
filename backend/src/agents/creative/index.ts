@@ -14,14 +14,12 @@ import {
 } from "../types.js";
 import { getPlatformRules } from "./platform-rules.js";
 import { CREATIVE_PLAN_PROMPT } from "../../prompts/creative.prompts.js";
+import { createLazyModel } from "../model-factory.js";
 
-const model = new ChatGoogleGenerativeAI({
-  model: "gemini-2.5",
-  temperature: 0.7,
-  apiKey: process.env.GOOGLE_API_KEY,
-});
-
-const modelWithStructuredOutput = model.withStructuredOutput(DesignOptionsSchema);
+const getModel = createLazyModel(
+  { model: "gemini-2.5-flash", temperature: 0.7 },
+  DesignOptionsSchema
+);
 
 const generateImageTool = tool(
   async ({ prompt, width, height }) => {
@@ -147,12 +145,22 @@ async function planNode(state: CreativeState): Promise<Partial<CreativeState>> {
 
   let designOptions: DesignOption[] = [];
   try {
-    const response = await modelWithStructuredOutput.invoke([
+    console.log('[Creative Agent] Invoking model with prompt');
+    const response = await getModel().invoke([
       new SystemMessage(prompt),
       new HumanMessage(state.userRequest),
-    ]) as { options: DesignOption[] };
+    ]);
     
-    designOptions = response.options || [];
+    console.log('[Creative Agent] Model response:', JSON.stringify(response, null, 2));
+    
+    if (typeof response === 'object' && response !== null && 'options' in response) {
+      designOptions = (response as any).options || [];
+    } else {
+      console.warn('[Creative Agent] Unexpected response format:', response);
+      designOptions = [];
+    }
+    
+    console.log(`[Creative Agent] Generated ${designOptions.length} design options`);
   } catch (error) {
     console.error("Failed to generate design options:", error);
     designOptions = [];
@@ -217,21 +225,9 @@ async function applyNode(state: CreativeState): Promise<Partial<CreativeState>> 
 
 // ===== Conditional Edge Functions =====
 
-function shouldContinue(state: any): string {
-  switch (state.phase) {
-    case CreativeAgentPhase.PARSE:
-      return "plan";
-    case CreativeAgentPhase.PLAN:
-      return "generate";
-    case CreativeAgentPhase.GENERATE:
-      return state.requiresHITL ? "hitl" : "apply";
-    case CreativeAgentPhase.HITL:
-      return "apply";
-    case CreativeAgentPhase.APPLY:
-      return END;
-    default:
-      return END;
-  }
+function routeAfterGenerate(state: any): string {
+  console.log(`[Creative Agent] Routing after generate, requiresHITL: ${state.requiresHITL}`);
+  return state.requiresHITL ? "hitl" : "apply";
 }
 
 // ===== Build the Creative Agent Graph =====
@@ -242,11 +238,11 @@ export const creativeGraph = new StateGraph(CreativeStateSchema)
   .addNode("hitl", hitlNode)
   .addNode("apply", applyNode)
   .addEdge(START, "parse")
-  .addConditionalEdges("parse", shouldContinue, ["plan", END])
-  .addConditionalEdges("plan", shouldContinue, ["generate", END])
-  .addConditionalEdges("generate", shouldContinue, ["hitl", "apply", END])
-  .addConditionalEdges("hitl", shouldContinue, ["apply", END])
-  .addConditionalEdges("apply", shouldContinue, [END])
+  .addEdge("parse", "plan")
+  .addEdge("plan", "generate")
+  .addConditionalEdges("generate", routeAfterGenerate)
+  .addEdge("hitl", "apply")
+  .addEdge("apply", END)
   .compile();
 
 // ===== Helper Function =====

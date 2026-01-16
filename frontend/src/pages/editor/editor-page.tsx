@@ -108,11 +108,20 @@ export const EditorPage = () => {
     });
 
     return () => {
-      canvas.dispose();
+      if (canvas) {
+        canvas.dispose();
+      }
       canvasInitialized.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [init, project?.id]);
+
+  useEffect(() => {
+    if (isError || !project) {
+      toast.error("Project not found");
+      navigate("/");
+    }
+  }, [isError, project, navigate]);
 
   if (isLoading) {
     return (
@@ -123,8 +132,6 @@ export const EditorPage = () => {
   }
 
   if (isError || !project) {
-    toast.error("Project not found");
-    navigate("/");
     return null;
   }
 
