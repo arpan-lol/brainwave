@@ -1,0 +1,201 @@
+{
+  "router": {
+    "confidence_thresholds": {
+      "high": 0.85,
+      "medium": 0.6,
+      "low": 0.4
+    },
+    "intent_categories": {
+      "creative": {
+        "keywords": ["generate", "create", "add", "design", "make", "build", "compose"],
+        "sub_intents": ["image_generation", "text_creation", "layout_design", "color_scheme", "background_removal"]
+      },
+      "validate": {
+        "keywords": ["check", "validate", "verify", "compliance", "rules", "guidelines", "correct"],
+        "sub_intents": ["compliance_check", "brand_validation", "size_validation", "content_validation"]
+      },
+      "combined": {
+        "keywords": ["and", "then", "also", "both"],
+        "sub_intents": ["generate_and_validate", "create_and_check"]
+      },
+      "optimize": {
+        "keywords": ["improve", "optimize", "enhance", "better", "fix"],
+        "sub_intents": ["performance_optimization", "visual_enhancement", "accessibility_improvement"]
+      }
+    },
+    "platform_detection": {
+      "keywords": {
+        "amazon": ["amazon", "amz", "a+"],
+        "walmart": ["walmart", "wmt"],
+        "flipkart": ["flipkart", "fk", "flipkart.com"]
+      },
+      "default": "amazon"
+    },
+    "require_clarification_threshold": 0.5,
+    "multi_platform_support": false
+  },
+  "creative": {
+    "phases": ["analyze", "plan", "generate", "review", "apply"],
+    "generation_modes": {
+      "quick": {
+        "options_count": 1,
+        "max_iterations": 1,
+        "skip_review": true
+      },
+      "standard": {
+        "options_count": 3,
+        "max_iterations": 2,
+        "skip_review": false
+      },
+      "comprehensive": {
+        "options_count": 5,
+        "max_iterations": 3,
+        "skip_review": false
+      }
+    },
+    "hitl_triggers": {
+      "multiple_options": true,
+      "low_confidence": 0.7,
+      "major_changes_threshold": 3,
+      "critical_elements": ["product_image", "brand_logo"],
+      "user_preference_required": ["color_scheme_change", "layout_restructure"]
+    },
+    "brand_consistency": {
+      "check_color_palette": true,
+      "check_font_usage": true,
+      "check_logo_placement": true,
+      "min_consistency_score": 0.7
+    },
+    "contextual_awareness": {
+      "preserve_existing_elements": true,
+      "respect_user_layout": true,
+      "smart_positioning": true,
+      "auto_align": true
+    },
+    "asset_generation": {
+      "image": {
+        "provider": "nanobannana",
+        "fallback": "placeholder",
+        "max_retries": 3
+      },
+      "background_removal": {
+        "provider": "remove.bg",
+        "fallback": "skip",
+        "auto_apply": false
+      }
+    }
+  },
+  "validation": {
+    "tiers": ["instant", "rule_engine", "llm", "comprehensive"],
+    "tier_config": {
+      "instant": {
+        "max_execution_ms": 50,
+        "checks": ["file_size", "dimensions", "format"]
+      },
+      "rule_engine": {
+        "max_execution_ms": 500,
+        "checks": ["all_measurable_rules"]
+      },
+      "llm": {
+        "max_execution_ms": 5000,
+        "checks": ["subjective_rules", "semantic_validation"]
+      },
+      "comprehensive": {
+        "max_execution_ms": 10000,
+        "checks": ["all_rules", "cross_validation", "accessibility"]
+      }
+    },
+    "severity_levels": {
+      "critical": {
+        "score": 100,
+        "block_export": true,
+        "require_fix": true
+      },
+      "high": {
+        "score": 75,
+        "block_export": false,
+        "require_acknowledgement": true
+      },
+      "medium": {
+        "score": 50,
+        "block_export": false,
+        "show_warning": true
+      },
+      "low": {
+        "score": 25,
+        "block_export": false,
+        "show_suggestion": true
+      }
+    },
+    "auto_fix": {
+      "enabled": true,
+      "confidence_threshold": 0.8,
+      "fixable_rules": [
+        "bg_color",
+        "font_size",
+        "text_alignment",
+        "element_spacing",
+        "color_contrast"
+      ],
+      "require_user_approval": true
+    },
+    "progressive_validation": {
+      "validate_on_change": true,
+      "debounce_ms": 300,
+      "cache_results": true,
+      "cache_ttl_ms": 60000
+    }
+  },
+  "workflow": {
+    "error_handling": {
+      "rate_limit": {
+        "max_retries": 3,
+        "backoff_multiplier": 2,
+        "initial_delay_ms": 1000
+      },
+      "tool_failure": {
+        "fallback_strategy": "graceful_degradation",
+        "notify_user": true
+      },
+      "timeout": {
+        "router": 3000,
+        "creative": 15000,
+        "validation": 8000
+      }
+    },
+    "performance": {
+      "enable_caching": true,
+      "parallel_execution": true,
+      "max_concurrent_operations": 3
+    },
+    "logging": {
+      "level": "info",
+      "log_user_requests": true,
+      "log_agent_decisions": true,
+      "log_errors": true
+    }
+  },
+  "hitl": {
+    "modes": {
+      "always": {
+        "description": "Always require human review",
+        "conditions": ["user_setting_enabled"]
+      },
+      "smart": {
+        "description": "Intelligent decision based on confidence and impact",
+        "conditions": ["low_confidence", "major_changes", "critical_elements"]
+      },
+      "minimal": {
+        "description": "Only for critical decisions",
+        "conditions": ["critical_violations", "conflicting_rules"]
+      },
+      "never": {
+        "description": "Fully automated",
+        "conditions": []
+      }
+    },
+    "default_mode": "smart",
+    "preview_timeout_ms": 30000,
+    "allow_skip": true
+  }
+}

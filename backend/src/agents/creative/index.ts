@@ -11,10 +11,13 @@ import {
   PlatformRules,
   CanvasState,
   DesignOptionsSchema,
+  GenerationMode,
+  BrandContext,
 } from "../types.js";
 import { getPlatformRules } from "./platform-rules.js";
-import { CREATIVE_PLAN_PROMPT } from "../../prompts/creative.prompts.js";
+import { CREATIVE_ANALYZE_PROMPT, CREATIVE_PLAN_PROMPT, CREATIVE_GENERATE_PROMPT } from "../../prompts/creative.prompts.js";
 import { createLazyModel } from "../model-factory.js";
+import { getCreativeConfig } from "../../config/config-loader.js";
 
 const getModel = createLazyModel(
   { model: "gemini-2.5-flash", temperature: 0.7 },
@@ -23,7 +26,6 @@ const getModel = createLazyModel(
 
 const generateImageTool = tool(
   async ({ prompt, width, height }) => {
-    // TODO
     console.log(`Generating image: ${prompt} (${width}x${height})`);
     return {
       url: `https://placeholder.com/${width}x${height}`,
@@ -42,10 +44,8 @@ const generateImageTool = tool(
   }
 );
 
-// Tool: Remove background (placeholder - integrate with remove.bg)
 const removeBackgroundTool = tool(
   async ({ imageUrl }) => {
-    // TODO: Integrate with remove.bg API
     console.log(`Removing background from: ${imageUrl}`);
     return {
       url: imageUrl + "?bg-removed=true",
@@ -60,7 +60,6 @@ const removeBackgroundTool = tool(
   }
 );
 
-// Tool: Get platform rules
 const getPlatformRulesTool = tool(
   async ({ platform }) => {
     return getPlatformRules(platform as Platform);
@@ -74,10 +73,8 @@ const getPlatformRulesTool = tool(
   }
 );
 
-// Tool: Suggest color palette
 const suggestColorPaletteTool = tool(
   async ({ brand, platform }) => {
-    // Simple rule-based color palette suggestion
     const palettes: Record<string, string[]> = {
       amazon: ["#FF9900", "#146EB4", "#FFFFFF", "#000000"],
       walmart: ["#0071CE", "#FFC220", "#FFFFFF", "#000000"],
@@ -95,43 +92,87 @@ const suggestColorPaletteTool = tool(
   }
 );
 
-// ===== State Schema =====
 const CreativeStateSchema = new StateSchema({
   canvasState: z.object({
     width: z.number(),
     height: z.number(),
     elements: z.array(z.any()),
     background: z.any().optional(),
+    metadata: z.any().optional(),
   }),
   platform: z.enum(["amazon", "walmart", "flipkart"]),
   userRequest: z.string(),
   phase: z.nativeEnum(CreativeAgentPhase),
+  generationMode: z.enum(["quick", "standard", "comprehensive"]),
   designOptions: z.array(z.any()),
   selectedOption: z.any().optional(),
   platformRules: z.any().optional(),
   requiresHITL: z.boolean(),
+  hitlReason: z.array(z.string()).optional(),
+  brandContext: z.any().optional(),
+  iterationCount: z.number(),
   messages: MessagesValue,
 });
 
-// ===== Graph Nodes =====
+function analyzeBrandContext(canvasState: CanvasState, platformRules: PlatformRules): BrandContext {
+  const elements = canvasState.elements;
+  const detectedColors: string[] = [];
+  const detectedFonts: string[] = [];
+  
+  elements.forEach(el => {
+    if (el.style?.color) detectedColors.push(el.style.color);
+    if (el.style?.backgroundColor) detectedColors.push(el.style.backgroundColor);
+    if (el.style?.fontFamily) detectedFonts.push(el.style.fontFamily);
+  });
 
-// Parse node - understand the request
-async function parseNode(state: CreativeState): Promise<Partial<CreativeState>> {
+  const uniqueColors = [...new Set(detectedColors)];
+  const uniqueFonts = [...new Set(detectedFonts)];
+
+  const brandColors = platformRules.brand?.colors || [];
+  const colorMatch = uniqueColors.filter(c => brandColors.includes(c)).length;
+  const consistencyScore = brandColors.length > 0 ? colorMatch / brandColors.length : 0.5;
+
   return {
-    phase: CreativeAgentPhase.PLAN,
-    platformRules: getPlatformRules(state.platform),
+    name: canvasState.metadata?.brand,
+    colors: uniqueColors,
+    fonts: uniqueFonts,
+    consistencyScore,
   };
 }
 
-// Plan node - plan the design approach
+async function analyzeNode(state: CreativeState): Promise<Partial<CreativeState>> {
+  const creativeConfig = getCreativeConfig();
+  const platformRules = getPlatformRules(state.platform);
+  
+  const brandContext = analyzeBrandContext(state.canvasState, platformRules);
+  
+  const criticalElements = state.canvasState.elements.filter(
+    el => el.metadata?.isCritical || el.metadata?.isProduct
+  );
+
+  console.log(`[Creative Agent] Analyzed canvas: ${state.canvasState.elements.length} elements, brand consistency: ${brandContext.consistencyScore}`);
+
+  return {
+    phase: CreativeAgentPhase.PLAN,
+    platformRules,
+    brandContext,
+  };
+}
+
 async function planNode(state: CreativeState): Promise<Partial<CreativeState>> {
+  const creativeConfig = getCreativeConfig();
+  const modeConfig = creativeConfig.generation_modes[state.generationMode];
+  
   const elementCount = state.canvasState.elements.length;
   const rules = state.platformRules!;
+  
   const topRules = [
-    `Background color: ${rules.requiredBgColor || "any"}`,
+    `Background: ${rules.requiredBgColor || "flexible"}`,
     `Dimensions: ${rules.dimensions.width}x${rules.dimensions.height}`,
-    `Max file size: ${rules.fileSize.maxMB}MB`,
+    `File size: max ${rules.fileSize.maxMB}MB`,
     `Product coverage: ${rules.product.minCoverage || 60}-${rules.product.maxCoverage || 80}%`,
+    `Text: max ${rules.text.maxLines} lines, min ${rules.text.minFontSize}px font`,
+    `Brand consistency: min ${rules.brand?.brandConsistencyScoreMin || 0.7}`,
   ];
 
   const prompt = CREATIVE_PLAN_PROMPT(
@@ -140,70 +181,96 @@ async function planNode(state: CreativeState): Promise<Partial<CreativeState>> {
     state.canvasState.width,
     state.canvasState.height,
     state.userRequest,
-    topRules
+    topRules,
+    state.brandContext!,
+    modeConfig.optionsCount
   );
 
   let designOptions: DesignOption[] = [];
   try {
-    console.log('[Creative Agent] Invoking model with prompt');
+    console.log('[Creative Agent] Planning design options');
     const response = await getModel().invoke([
       new SystemMessage(prompt),
       new HumanMessage(state.userRequest),
     ]);
     
-    console.log('[Creative Agent] Model response:', JSON.stringify(response, null, 2));
-    
     if (typeof response === 'object' && response !== null && 'options' in response) {
       designOptions = (response as any).options || [];
-    } else {
-      console.warn('[Creative Agent] Unexpected response format:', response);
-      designOptions = [];
     }
     
-    console.log(`[Creative Agent] Generated ${designOptions.length} design options`);
+    console.log(`[Creative Agent] Planned ${designOptions.length} design options`);
   } catch (error) {
-    console.error("Failed to generate design options:", error);
+    console.error("Failed to plan design options:", error);
     designOptions = [];
   }
-
-  // Determine if HITL is required
-  const requiresHITL = 
-    designOptions.length > 1 || 
-    designOptions.some(opt => opt.confidence < 0.7) ||
-    elementCount > 3;
 
   return {
     phase: CreativeAgentPhase.GENERATE,
     designOptions,
-    requiresHITL,
   };
 }
-
-// Generate node - generate design assets
 async function generateNode(state: CreativeState): Promise<Partial<CreativeState>> {
-  // For MVP, skip actual generation and move to HITL or APPLY
-  const nextPhase = state.requiresHITL 
-    ? CreativeAgentPhase.HITL 
-    : CreativeAgentPhase.APPLY;
+  const creativeConfig = getCreativeConfig();
+  
+  for (const option of state.designOptions) {
+    for (const element of option.elements) {
+      if (element.type === "image" && (element.metadata as any)?.needsGeneration) {
+        console.log(`[Creative Agent] Would generate image for: ${element.id}`);
+      }
+    }
+  }
 
   return {
-    phase: nextPhase,
+    phase: CreativeAgentPhase.REVIEW,
   };
 }
 
-// HITL node - human-in-the-loop decision point
-async function hitlNode(state: CreativeState): Promise<Partial<CreativeState>> {
-  // This will be handled by the API endpoint
-  // For now, auto-select the first option
-  const selectedOption = state.designOptions[0];
+async function reviewNode(state: CreativeState): Promise<Partial<CreativeState>> {
+  const creativeConfig = getCreativeConfig();
+  const hitlTriggers = creativeConfig.hitl_triggers;
+  const hitlReasons: string[] = [];
+
+  if (state.designOptions.length > 1 && hitlTriggers.multiple_options) {
+    hitlReasons.push(`Multiple options available (${state.designOptions.length})`);
+  }
+
+  const hasLowConfidence = state.designOptions.some(
+    opt => opt.confidence < hitlTriggers.low_confidence
+  );
+  if (hasLowConfidence) {
+    hitlReasons.push("Low confidence in some options");
+  }
+
+  const totalModifications = state.designOptions[0]?.modifications?.length || 0;
+  if (totalModifications > hitlTriggers.major_changes_threshold) {
+    hitlReasons.push(`Major changes (${totalModifications} modifications)`);
+  }
+
+  const hasCriticalElements = state.designOptions[0]?.elements?.some(
+    el => el.metadata?.isCritical || el.metadata?.isProduct
+  );
+  if (hasCriticalElements) {
+    hitlReasons.push("Changes to critical elements");
+  }
+
+  const brandConsistencyLow = state.designOptions.some(
+    opt => (opt.brandConsistencyScore || 1) < (state.platformRules?.brand?.brandConsistencyScoreMin || 0.7)
+  );
+  if (brandConsistencyLow) {
+    hitlReasons.push("Brand consistency below threshold");
+  }
+
+  const requiresHITL = hitlReasons.length > 0;
+
+  console.log(`[Creative Agent] HITL required: ${requiresHITL}, Reasons: ${hitlReasons.join(", ")}`);
 
   return {
-    phase: CreativeAgentPhase.APPLY,
-    selectedOption,
+    phase: requiresHITL ? CreativeAgentPhase.REVIEW : CreativeAgentPhase.APPLY,
+    requiresHITL,
+    hitlReason: hitlReasons,
   };
 }
 
-// Apply node - apply the design to canvas
 async function applyNode(state: CreativeState): Promise<Partial<CreativeState>> {
   const option = state.selectedOption || state.designOptions[0];
   
@@ -211,55 +278,74 @@ async function applyNode(state: CreativeState): Promise<Partial<CreativeState>> 
     throw new Error("No design option available to apply");
   }
 
-  // Merge the new elements with existing canvas
+  const preserveExisting = getCreativeConfig().contextual_awareness.preserve_existing_elements;
+  
+  let updatedElements = preserveExisting 
+    ? [...state.canvasState.elements] 
+    : [];
+
+  for (const newElement of option.elements) {
+    const existingIndex = updatedElements.findIndex(el => el.id === newElement.id);
+    if (existingIndex >= 0) {
+      updatedElements[existingIndex] = { ...updatedElements[existingIndex], ...newElement };
+    } else {
+      updatedElements.push(newElement);
+    }
+  }
+
   const updatedCanvas: CanvasState = {
     ...state.canvasState,
-    elements: [...state.canvasState.elements, ...option.elements],
+    elements: updatedElements,
+    metadata: {
+      ...state.canvasState.metadata,
+      lastModified: new Date().toISOString(),
+      version: (state.canvasState.metadata?.version || 0) + 1,
+    },
   };
 
   return {
     canvasState: updatedCanvas,
-    phase: CreativeAgentPhase.APPLY, // Final state
+    phase: CreativeAgentPhase.APPLY,
   };
 }
 
-// ===== Conditional Edge Functions =====
-
-function routeAfterGenerate(state: any): string {
-  console.log(`[Creative Agent] Routing after generate, requiresHITL: ${state.requiresHITL}`);
-  return state.requiresHITL ? "hitl" : "apply";
+function routeAfterReview(state: any): string {
+  console.log(`[Creative Agent] Routing after review, requiresHITL: ${state.requiresHITL}`);
+  return state.requiresHITL ? "review" : "apply";
 }
 
-// ===== Build the Creative Agent Graph =====
 export const creativeGraph = new StateGraph(CreativeStateSchema)
-  .addNode("parse", parseNode)
+  .addNode("analyze", analyzeNode)
   .addNode("plan", planNode)
   .addNode("generate", generateNode)
-  .addNode("hitl", hitlNode)
+  .addNode("review", reviewNode)
   .addNode("apply", applyNode)
-  .addEdge(START, "parse")
-  .addEdge("parse", "plan")
+  .addEdge(START, "analyze")
+  .addEdge("analyze", "plan")
   .addEdge("plan", "generate")
-  .addConditionalEdges("generate", routeAfterGenerate)
-  .addEdge("hitl", "apply")
+  .addEdge("generate", "review")
+  .addConditionalEdges("review", routeAfterReview, ["review", "apply"])
   .addEdge("apply", END)
   .compile();
 
-// ===== Helper Function =====
 export async function runCreativeAgent(
   canvasState: CanvasState,
   platform: Platform,
-  userRequest: string
+  userRequest: string,
+  generationMode: GenerationMode = "standard"
 ): Promise<CreativeState> {
   const result = await creativeGraph.invoke({
     canvasState,
     platform,
     userRequest,
-    phase: CreativeAgentPhase.PARSE,
+    phase: CreativeAgentPhase.ANALYZE,
+    generationMode,
     designOptions: [],
     requiresHITL: false,
+    iterationCount: 0,
     messages: [],
   });
 
   return result as CreativeState;
 }
+

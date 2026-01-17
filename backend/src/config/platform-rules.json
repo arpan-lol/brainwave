@@ -1,0 +1,227 @@
+{
+  "amazon": {
+    "platform": "amazon",
+    "display_name": "Amazon",
+    "visual": {
+      "required_bg_color": "#FFFFFF",
+      "allowed_bg_colors": ["#FFFFFF", "#F8F8F8"],
+      "dimensions": {
+        "width": 1200,
+        "height": 628,
+        "aspect_ratio": "1.91:1"
+      },
+      "file_size": {
+        "max_mb": 5,
+        "min_mb": 0.1
+      },
+      "file_formats": ["JPG", "PNG", "GIF"],
+      "dpi": {
+        "min": 72,
+        "recommended": 150
+      }
+    },
+    "text": {
+      "max_lines": 3,
+      "min_font_size": 14,
+      "max_font_size": 72,
+      "allowed_fonts": ["Arial", "Helvetica", "Amazon Ember", "Roboto"],
+      "max_characters": 150,
+      "line_height_ratio": 1.2,
+      "text_to_image_ratio": {
+        "min": 0.1,
+        "max": 0.4
+      },
+      "readability": {
+        "min_contrast_ratio": 4.5,
+        "avoid_overlapping_product": true
+      }
+    },
+    "product": {
+      "min_coverage": 60,
+      "max_coverage": 80,
+      "min_visibility": 85,
+      "center_alignment_tolerance": 15,
+      "background_removal_required": false,
+      "show_multiple_angles": false,
+      "min_resolution": 1000
+    },
+    "brand": {
+      "colors": ["#FF9900", "#146EB4", "#232F3E"],
+      "logo_required": false,
+      "logo_max_size_percent": 15,
+      "logo_positions": ["top-left", "top-right", "bottom-right"],
+      "brand_consistency_score_min": 0.7
+    },
+    "compliance": {
+      "prohibited_content": ["weapons", "alcohol", "tobacco", "adult", "medical_claims"],
+      "required_disclaimers": [],
+      "trademark_clearance": true,
+      "accessibility": {
+        "alt_text_required": true,
+        "color_blind_safe": true
+      }
+    },
+    "performance": {
+      "click_through_zones": ["product", "cta"],
+      "recommended_cta_position": "bottom-right",
+      "cta_min_size": {
+        "width": 120,
+        "height": 40
+      }
+    },
+    "seasonal_rules": {
+      "holiday_themes_allowed": true,
+      "seasonal_color_variations": true
+    }
+  },
+  "walmart": {
+    "platform": "walmart",
+    "display_name": "Walmart",
+    "visual": {
+      "required_bg_color": "#FFFFFF",
+      "allowed_bg_colors": ["#FFFFFF", "#F5F5F5", "#0071CE"],
+      "dimensions": {
+        "width": 1200,
+        "height": 627,
+        "aspect_ratio": "1.91:1"
+      },
+      "file_size": {
+        "max_mb": 5,
+        "min_mb": 0.1
+      },
+      "file_formats": ["JPG", "PNG"],
+      "dpi": {
+        "min": 72,
+        "recommended": 150
+      }
+    },
+    "text": {
+      "max_lines": 4,
+      "min_font_size": 12,
+      "max_font_size": 68,
+      "allowed_fonts": ["Bogle", "Arial", "Helvetica", "Open Sans"],
+      "max_characters": 180,
+      "line_height_ratio": 1.3,
+      "text_to_image_ratio": {
+        "min": 0.15,
+        "max": 0.45
+      },
+      "readability": {
+        "min_contrast_ratio": 4.5,
+        "avoid_overlapping_product": true
+      }
+    },
+    "product": {
+      "min_coverage": 65,
+      "max_coverage": 85,
+      "min_visibility": 80,
+      "center_alignment_tolerance": 20,
+      "background_removal_required": true,
+      "show_multiple_angles": true,
+      "min_resolution": 1200
+    },
+    "brand": {
+      "colors": ["#0071CE", "#FFC220", "#FFFFFF"],
+      "logo_required": false,
+      "logo_max_size_percent": 20,
+      "logo_positions": ["top-left", "bottom-left"],
+      "brand_consistency_score_min": 0.65
+    },
+    "compliance": {
+      "prohibited_content": ["weapons", "alcohol", "tobacco", "adult", "gambling", "medical_claims"],
+      "required_disclaimers": ["pricing_disclaimer"],
+      "trademark_clearance": true,
+      "accessibility": {
+        "alt_text_required": true,
+        "color_blind_safe": true
+      }
+    },
+    "performance": {
+      "click_through_zones": ["product", "cta", "price"],
+      "recommended_cta_position": "bottom-center",
+      "cta_min_size": {
+        "width": 140,
+        "height": 45
+      }
+    },
+    "seasonal_rules": {
+      "holiday_themes_allowed": true,
+      "seasonal_color_variations": true
+    }
+  },
+  "flipkart": {
+    "platform": "flipkart",
+    "display_name": "Flipkart",
+    "visual": {
+      "required_bg_color": "#FFFFFF",
+      "allowed_bg_colors": ["#FFFFFF", "#F0F5FF"],
+      "dimensions": {
+        "width": 1200,
+        "height": 630,
+        "aspect_ratio": "1.90:1"
+      },
+      "file_size": {
+        "max_mb": 4,
+        "min_mb": 0.1
+      },
+      "file_formats": ["JPG", "PNG"],
+      "dpi": {
+        "min": 72,
+        "recommended": 150
+      }
+    },
+    "text": {
+      "max_lines": 3,
+      "min_font_size": 14,
+      "max_font_size": 70,
+      "allowed_fonts": ["Flipkart Modern", "Arial", "Helvetica", "Lato"],
+      "max_characters": 140,
+      "line_height_ratio": 1.25,
+      "text_to_image_ratio": {
+        "min": 0.1,
+        "max": 0.35
+      },
+      "readability": {
+        "min_contrast_ratio": 4.5,
+        "avoid_overlapping_product": true
+      }
+    },
+    "product": {
+      "min_coverage": 60,
+      "max_coverage": 75,
+      "min_visibility": 90,
+      "center_alignment_tolerance": 10,
+      "background_removal_required": false,
+      "show_multiple_angles": false,
+      "min_resolution": 1000
+    },
+    "brand": {
+      "colors": ["#00539F", "#E32526", "#FFFFFF"],
+      "logo_required": false,
+      "logo_max_size_percent": 12,
+      "logo_positions": ["top-right", "bottom-right"],
+      "brand_consistency_score_min": 0.75
+    },
+    "compliance": {
+      "prohibited_content": ["weapons", "alcohol", "tobacco", "adult", "political", "medical_claims"],
+      "required_disclaimers": ["offers_disclaimer"],
+      "trademark_clearance": true,
+      "accessibility": {
+        "alt_text_required": true,
+        "color_blind_safe": true
+      }
+    },
+    "performance": {
+      "click_through_zones": ["product", "cta", "offer"],
+      "recommended_cta_position": "bottom-right",
+      "cta_min_size": {
+        "width": 130,
+        "height": 42
+      }
+    },
+    "seasonal_rules": {
+      "holiday_themes_allowed": true,
+      "seasonal_color_variations": false
+    }
+  }
+}
